@@ -4,34 +4,28 @@ import AzenseLogo from "./assets/Azense-logo.png";
 
 // Use Render backend in production; localhost fallback for local dev
 const API_BASE =
-  import.meta.env.VITE_API_BASE_URL ||
-  "https://azense-backend.onrender.com";
+  import.meta.env.VITE_API_BASE || "https://azense-backend.onrender.com";
 const EPIC_API_BASE = API_BASE;
 
 function formatDischargeSummary(text) {
   if (!text) return "";
-
   const lines = text.split("\n");
+  const patterns = [
+    /^1\.\s*Reason for hospitalization and brief hospital course/i,
+    /^2\.\s*Procedures and key treatments/i,
+    /^3\.\s*Discharge diagnoses/i,
+    /^4\.\s*Discharge medications and changes/i,
+    /^5\.\s*Follow-up and pending items/i,
+  ];
   const processed = lines.map((line) => {
     const trimmed = line.trimStart();
-
-    const patterns = [
-      /^1\.\s*Reason for hospitalization and brief hospital course/i,
-      /^2\.\s*Procedures and key treatments/i,
-      /^3\.\s*Discharge diagnoses/i,
-      /^4\.\s*Discharge medications and changes/i,
-      /^5\.\s*Follow-up and pending items/i,
-    ];
-
     for (const pattern of patterns) {
       if (pattern.test(trimmed)) {
         return `<strong>${trimmed}</strong>`;
       }
     }
-
     return line;
   });
-
   return processed.join("\n");
 }
 
@@ -46,14 +40,12 @@ function App() {
   const [errorText, setErrorText] = useState("");
   const [activeView, setActiveView] = useState("dc_draft");
 
-  // toggles
   const [wantSummary, setWantSummary] = useState(true);
   const [wantHp, setWantHp] = useState(true);
   const [wantCoding, setWantCoding] = useState(true);
   const [wantInsights, setWantInsights] = useState(true);
   const [wantProblemInsights, setWantProblemInsights] = useState(true);
 
-  // EPIC
   const [epicStatus, setEpicStatus] = useState("");
 
   const startEpicAuth = async () => {
@@ -139,12 +131,11 @@ function App() {
     setTrainingLoading(true);
 
     try {
-      const res = await fetch(
-        `${API_BASE}/training-explanations?patient_id=${encodeURIComponent(
-          patientId || "1"
-        )}`,
-        { method: "POST" }
-      );
+      const res = await fetch(`${API_BASE}/training-explanations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ patient_id: patientId || "1" }),
+      });
       if (!res.ok) {
         throw new Error(`Training error: ${res.status}`);
       }
@@ -905,7 +896,6 @@ function App() {
               />
             </div>
 
-            {/* EPIC button + status */}
             <div
               style={{
                 marginTop: "4px",
@@ -989,7 +979,6 @@ function App() {
               </div>
             )}
 
-            {/* toggles */}
             <div
               style={{
                 marginTop: "6px",
@@ -1099,6 +1088,27 @@ function App() {
                 }}
               >
                 {loading ? "Running AZense…" : "Run AZense"}
+              </button>
+              <button
+                onClick={runTraining}
+                disabled={trainingLoading || !summary}
+                style={{
+                  padding: "7px 14px",
+                  borderRadius: "999px",
+                  border: "1px solid rgba(79,70,229,0.9)",
+                  background:
+                    "linear-gradient(135deg, #4F46E5 0%, #6366F1 40%, #818CF8 100%)",
+                  color: "#F9FAFB",
+                  fontWeight: 600,
+                  fontSize: "12px",
+                  boxShadow: "0 10px 24px rgba(79,70,229,0.45)",
+                  cursor:
+                    trainingLoading || !summary ? "not-allowed" : "pointer",
+                  opacity: trainingLoading || !summary ? 0.7 : 1,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {trainingLoading ? "Loading Resident view…" : "Azense for Residents"}
               </button>
             </div>
           </section>
