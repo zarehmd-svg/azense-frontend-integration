@@ -1,6 +1,7 @@
 // src/App.jsx
 import { useState } from "react";
 import AzenseLogo from "./assets/Azense-logo.png";
+import { ChatPanel } from "./components/ChatPanel";
 
 // Use Render backend in production; localhost fallback for local dev
 const API_BASE =
@@ -843,6 +844,7 @@ function App() {
             gap: "20px",
           }}
         >
+          {/* LEFT COLUMN */}
           <section>
             <div
               style={{
@@ -1108,11 +1110,17 @@ function App() {
                   whiteSpace: "nowrap",
                 }}
               >
-                {trainingLoading ? "Loading Resident view…" : "Azense for Residents"}
+                {trainingLoading
+                  ? "Loading Resident view…"
+                  : "Azense for Residents"}
               </button>
             </div>
+
+            {/* Chat panel under all left column content */}
+            <ChatPanel />
           </section>
 
+          {/* RIGHT COLUMN */}
           <section
             style={{
               borderRadius: "14px",
