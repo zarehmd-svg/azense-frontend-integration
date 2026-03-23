@@ -1,42 +1,86 @@
 import { useState } from "react";
 
+const API_BASE =
+  import.meta.env.VITE_API_BASE || "https://azense-backend.onrender.com";
+
 export function ChatPanel() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const trimmed = input.trim();
-    if (!trimmed) return;
+    if (!trimmed || loading) return;
 
     const userMessage = { role: "user", content: trimmed };
-
-    const assistantMessage = {
-      role: "assistant",
-      content:
-        "This is a teaching-only chat. Avoid real patient identifiers. " +
-        "Ask about what AZense is doing, how to interpret outputs, or " +
-        "how to phrase documentation.",
-    };
-
-    setMessages((prev) => [...prev, userMessage, assistantMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInput("");
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${API_BASE}/teaching-chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: trimmed }),
+      });
+      if (!res.ok) {
+        throw new Error(`Teaching chat error: ${res.status}`);
+      }
+      const json = await res.json();
+      const assistantMessage = {
+        role: "assistant",
+        content:
+          json.reply ||
+          "I couldn't generate a detailed teaching response. Please try again.",
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (err) {
+      console.error(err);
+      const assistantMessage = {
+        role: "assistant",
+        content:
+          "I wasn't able to reach the AZense teaching service. "
+          + "Please try again in a moment.",
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <div
       style={{
-        border: "1px solid #ddd",
-        borderRadius: 8,
-        padding: 12,
+        borderRadius: 12,
+        padding: 10,
         marginTop: 16,
-        maxHeight: 300,
+        maxHeight: 320,
         display: "flex",
         flexDirection: "column",
         width: "100%",
+        background:
+          "linear-gradient(145deg, rgba(79,70,229,0.06), rgba(129,140,248,0.03))",
+        border: "1px solid rgba(79,70,229,0.30)",
       }}
     >
-      <div style={{ fontWeight: 600, marginBottom: 8 }}>
+      {/* Header styled like the purple Azense for Residents pill */}
+      <div
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          padding: "4px 10px",
+          borderRadius: "999px",
+          border: "1px solid rgba(79,70,229,0.9)",
+          background:
+            "linear-gradient(135deg, #4F46E5 0%, #6366F1 40%, #818CF8 100%)",
+          color: "#F9FAFB",
+          fontSize: "11px",
+          fontWeight: 600,
+          marginBottom: 8,
+          alignSelf: "flex-start",
+        }}
+      >
         AZense Teaching Chat (no PHI)
       </div>
 
@@ -49,10 +93,10 @@ export function ChatPanel() {
         }}
       >
         {messages.length === 0 && (
-          <div style={{ fontSize: 13, color: "#666" }}>
-            Ask about how AZense works, why it generated a certain
-            assessment, or how to phrase documentation. Do not include
-            real names, MRNs, or dates of birth.
+          <div style={{ fontSize: 12, color: "#4B5563" }}>
+            Ask about how AZense works, why it generated a certain assessment,
+            or how to phrase documentation. Do not include real names, MRNs,
+            dates of birth, or other PHI.
           </div>
         )}
 
@@ -72,6 +116,7 @@ export function ChatPanel() {
                 borderRadius: 12,
                 backgroundColor:
                   m.role === "user" ? "#e0f2fe" : "#f3f4f6",
+                color: "#111827",
               }}
             >
               {m.content}
@@ -99,16 +144,19 @@ export function ChatPanel() {
         />
         <button
           type="submit"
+          disabled={loading}
           style={{
             fontSize: 13,
             padding: "6px 10px",
             borderRadius: 6,
             border: "none",
-            backgroundColor: "#2563eb",
+            backgroundColor: loading ? "#93C5FD" : "#2563eb",
             color: "white",
+            cursor: loading ? "wait" : "pointer",
+            whiteSpace: "nowrap",
           }}
         >
-          Send
+          {loading ? "Thinking…" : "Send"}
         </button>
       </form>
     </div>
