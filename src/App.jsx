@@ -1,7 +1,7 @@
 // src/App.jsx
 import { useState } from "react";
 import AzenseLogo from "./assets/Azense-logo.png";
-import { ChatPanel } from "./components/ChatPanel2";
+import { ChatPanel } from "./components/ChatPanel";
 
 // Use Render backend in production; localhost fallback for local dev
 const API_BASE =
