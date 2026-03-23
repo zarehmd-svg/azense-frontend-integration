@@ -1,7 +1,7 @@
 // src/App.jsx
 import { useState } from "react";
 import AzenseLogo from "./assets/Azense-logo.png";
-import { ChatPanel } from "./components/ChatPanel";
+import { ChatPanel } from "./components/ChatPanel2";
 
 // Use Render backend in production; localhost fallback for local dev
 const API_BASE =
@@ -30,7 +30,18 @@ function formatDischargeSummary(text) {
   return processed.join("\n");
 }
 
+
 function App() {
+  // LOGIN STATE
+  const [loggedIn, setLoggedIn] = useState(
+    () => window.localStorage.getItem("azense_logged_in") === "true"
+  );
+  const [loginError, setLoginError] = useState("");
+  const [loginUsername, setLoginUsername] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+
+  // MAIN APP STATE
   const [patientId, setPatientId] = useState("1");
   const [input, setInput] = useState("");
   const [summary, setSummary] = useState(null);
@@ -48,6 +59,37 @@ function App() {
   const [wantProblemInsights, setWantProblemInsights] = useState(true);
 
   const [epicStatus, setEpicStatus] = useState("");
+
+  // LOGIN HANDLER
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginError("");
+    setLoginLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: loginUsername,
+          password: loginPassword,
+        }),
+      });
+      if (!res.ok) {
+        throw new Error(`Login error: ${res.status}`);
+      }
+      const json = await res.json();
+      if (!json.token) {
+        throw new Error("No token in response");
+      }
+      window.localStorage.setItem("azense_logged_in", "true");
+      setLoggedIn(true);
+    } catch (err) {
+      console.error(err);
+      setLoginError("Invalid username or password.");
+    } finally {
+      setLoginLoading(false);
+    }
+  };
 
   const startEpicAuth = async () => {
     try {
@@ -747,6 +789,168 @@ function App() {
     );
   };
 
+  // LOGIN GATE
+  if (!loggedIn) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background:
+            "radial-gradient(circle at top, #E2F2F0 0, #E9F0FB 45%, #D7E2F7 100%)",
+          fontFamily:
+            "system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif",
+        }}
+      >
+        <div
+          style={{
+            width: "100%",
+            maxWidth: 380,
+            backgroundColor: "white",
+            borderRadius: 16,
+            padding: 24,
+            boxShadow:
+              "0 24px 60px rgba(15,23,42,0.28), 0 0 0 1px rgba(15,23,42,0.08)",
+            border: "1px solid rgba(148,163,184,0.4)",
+          }}
+        >
+          <div style={{ textAlign: "center", marginBottom: 16 }}>
+            <img
+              src={AzenseLogo}
+              alt="AZense logo"
+              style={{ height: 50, marginBottom: 8 }}
+            />
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                color: "#0F172A",
+              }}
+            >
+              Sign in to AZense
+            </div>
+            <div
+              style={{
+                fontSize: 12,
+                color: "#6B7280",
+                marginTop: 4,
+              }}
+            >
+              Private prototype access
+            </div>
+          </div>
+
+          <form
+            onSubmit={handleLogin}
+            style={{ display: "flex", flexDirection: "column", gap: 10 }}
+          >
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  marginBottom: 4,
+                  color: "#4B5563",
+                }}
+              >
+                Username
+              </label>
+              <input
+                type="text"
+                value={loginUsername}
+                onChange={(e) => setLoginUsername(e.target.value)}
+                style={{
+                  width: "100%",
+                  borderRadius: 10,
+                  border: "1px solid rgba(148,163,184,0.9)",
+                  padding: "7px 9px",
+                  fontSize: 13,
+                  outline: "none",
+                  backgroundColor: "#F9FAFB",
+                }}
+              />
+            </div>
+
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  marginBottom: 4,
+                  color: "#4B5563",
+                }}
+              >
+                Password
+              </label>
+              <input
+                type="password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                style={{
+                  width: "100%",
+                  borderRadius: 10,
+                  border: "1px solid rgba(148,163,184,0.9)",
+                  padding: "7px 9px",
+                  fontSize: 13,
+                  outline: "none",
+                  backgroundColor: "#F9FAFB",
+                }}
+              />
+            </div>
+
+            {loginError && (
+              <div
+                style={{
+                  fontSize: 12,
+                  color: "#B91C1C",
+                }}
+              >
+                {loginError}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loginLoading}
+              style={{
+                marginTop: 4,
+                width: "100%",
+                padding: "8px 12px",
+                borderRadius: 999,
+                border: "1px solid rgba(15,23,42,0.9)",
+                background:
+                  "linear-gradient(135deg, #020617 0%, #111827 40%, #020617 100%)",
+                color: "#F9FAFB",
+                fontWeight: 600,
+                fontSize: 13,
+                cursor: loginLoading ? "wait" : "pointer",
+                opacity: loginLoading ? 0.85 : 1,
+              }}
+            >
+              {loginLoading ? "Signing in…" : "Sign in"}
+            </button>
+          </form>
+
+          <div
+            style={{
+              marginTop: 10,
+              fontSize: 11,
+              color: "#9CA3AF",
+              textAlign: "center",
+            }}
+          >
+            Share this username/password only with trusted colleagues.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // MAIN APP RENDER
   return (
     <div
       style={{
