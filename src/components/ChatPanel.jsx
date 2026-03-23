@@ -64,25 +64,27 @@ export function ChatPanel() {
         border: "1px solid rgba(79,70,229,0.30)",
       }}
     >
-      {/* Header styled like the purple Azense for Residents pill */}
+            {/* Header pill: AZense-AI, black and shiny */}
       <div
         style={{
           display: "inline-flex",
           alignItems: "center",
-          padding: "4px 10px",
+          padding: "4px 12px",
           borderRadius: "999px",
-          border: "1px solid rgba(79,70,229,0.9)",
+          border: "1px solid rgba(15,15,15,0.95)",
           background:
-            "linear-gradient(135deg, #4F46E5 0%, #6366F1 40%, #818CF8 100%)",
+            "linear-gradient(135deg, #020617 0%, #111827 40%, #020617 100%)",
           color: "#F9FAFB",
           fontSize: "11px",
-          fontWeight: 600,
+          fontWeight: 700,
           marginBottom: 8,
           alignSelf: "flex-start",
+          boxShadow: "0 8px 18px rgba(15,23,42,0.55)",
         }}
       >
-        AZense Teaching Chat (no PHI)
+        AZense-AI (no PHI)
       </div>
+
 
       <div
         style={{
