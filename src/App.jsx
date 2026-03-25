@@ -1375,5 +1375,17 @@ function App() {
     </div>
   );
 }
+import { Routes, Route } from "react-router-dom";
+import EpicLaunch from "./EpicLaunch";
+import Home from "./Home";
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/epic-launch" element={<EpicLaunch />} />
+    </Routes>
+  );
+}
 
 export default App;
