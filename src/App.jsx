@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import AzenseLogo from "./assets/Azense-logo.png";
 import { ChatPanel } from "./components/ChatPanel";
-import EpicLaunch from "./EpicLaunch";
+import cernerLaunch from "./cernerLaunch";
 
 const API_BASE =
   import.meta.env.VITE_API_BASE || "https://azense-backend.onrender.com";
@@ -54,21 +54,21 @@ function AppInner() {
   const [wantInsights, setWantInsights] = useState(true);
   const [wantProblemInsights, setWantProblemInsights] = useState(true);
 
-  const [epicStatus, setEpicStatus] = useState("");
-  const [epicContext, setEpicContext] = useState(null);
+  const [cernerStatus, setcernerStatus] = useState("");
+  const [cernerContext, setcernerContext] = useState(null);
 
   useEffect(() => {
-    const loadEpicContext = async () => {
+    const loadcernerContext = async () => {
       try {
-        const res = await fetch(`${API_BASE}/epic/context`);
+        const res = await fetch(`${API_BASE}/cerner/context`);
         if (!res.ok) return;
         const json = await res.json();
-        setEpicContext(json);
+        setcernerContext(json);
       } catch {
         // ignore if none
       }
     };
-    loadEpicContext();
+    loadcernerContext();
   }, []);
 
   const handleLogin = async (e) => {
@@ -101,9 +101,9 @@ function AppInner() {
     }
   };
 
-  const startEpicAuth = async () => {
-    setEpicStatus(
-      "Use Cerner test launch; SMART EHR launch now goes through /epic-launch."
+  const startcernerAuth = async () => {
+    setcernerStatus(
+      "Use Cerner test launch; SMART EHR launch now goes through /cerner-launch."
     );
   };
 
@@ -115,10 +115,10 @@ function AppInner() {
     setTraining(null);
 
     try {
-      const useEpic = !!epicContext;
+      const usecerner = !!cernerContext;
 
-      const summaryUrl = useEpic
-        ? `${API_BASE}/epic/generate-summary`
+      const summaryUrl = usecerner
+        ? `${API_BASE}/cerner/generate-summary`
         : `${API_BASE}/generate-summary?patient_id=${encodeURIComponent(
             patientId || "1"
           )}` +
@@ -135,7 +135,7 @@ function AppInner() {
       const summaryJson = await summaryRes.json();
 
       let codingJson = null;
-      if (wantCoding && !useEpic) {
+      if (wantCoding && !usecerner) {
         const codingRes = await fetch(
           `${API_BASE}/coding-diagnoses?patient_id=${encodeURIComponent(
             patientId || "1"
@@ -596,7 +596,7 @@ function AppInner() {
             <div style={{ fontSize: "12px", color: "#334155" }}>
               Signal‑first rounding companion
             </div>
-            {epicContext?.patient_resource && (
+            {cernerContext?.patient_resource && (
               <div
                 style={{
                   marginTop: 4,
@@ -609,7 +609,7 @@ function AppInner() {
                 }}
               >
                 {(() => {
-                  const p = epicContext.patient_resource;
+                  const p = cernerContext.patient_resource;
                   const nameObj = p.name && p.name[0];
                   const name =
                     (nameObj && (nameObj.text ||
@@ -699,7 +699,7 @@ function AppInner() {
               }}
             >
               <button
-                onClick={startEpicAuth}
+                onClick={startcernerAuth}
                 style={{
                   padding: "6px 14px",
                   borderRadius: "999px",
@@ -712,11 +712,11 @@ function AppInner() {
                   cursor: "pointer",
                 }}
               >
-                Connect to EPIC (sandbox)
+                Connect to cerner (sandbox)
               </button>
-              {epicStatus && (
+              {cernerStatus && (
                 <span style={{ fontSize: "11px", color: "#1D4ED8" }}>
-                  {epicStatus}
+                  {cernerStatus}
                 </span>
               )}
             </div>
@@ -788,7 +788,7 @@ function AppInner() {
                   type="checkbox"
                   checked={wantCoding}
                   onChange={(e) => setWantCoding(e.target.checked)}
-                  disabled={!!epicContext}
+                  disabled={!!cernerContext}
                 />
                 <span>Coding dx</span>
               </label>
@@ -924,8 +924,8 @@ function AppInner() {
 }
 
 function App() {
-  if (window.location.pathname === "/epic-launch") {
-    return <EpicLaunch />;
+  if (window.location.pathname === "/cerner-launch") {
+    return <cernerLaunch />;
   }
   return <AppInner />;
 }
