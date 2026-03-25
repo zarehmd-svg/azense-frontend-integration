@@ -1,22 +1,41 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function EpicLaunch() {
+  const [message, setMessage] = useState("Launching Cerner SMART app...");
+
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const iss = params.get("iss");
-    const launch = params.get("launch");
+    const run = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const iss = params.get("iss");
+      const launch = params.get("launch");
 
-    if (!iss || !launch) {
-      document.body.innerHTML = "<p>Missing iss or launch parameter.</p>";
-      return;
-    }
+      if (!iss || !launch) {
+        setMessage("Missing iss or launch parameter.");
+        return;
+      }
 
-    const backend = "https://azense-backend.onrender.com/epic/launch-auth";
-    const redirectUrl =
-      `${backend}?iss=${encodeURIComponent(iss)}&launch=${encodeURIComponent(launch)}`;
+      try {
+        const backend = "https://azense-backend.onrender.com/epic/launch-auth";
+        const res = await fetch(
+          `${backend}?iss=${encodeURIComponent(iss)}&launch=${encodeURIComponent(launch)}`
+        );
 
-    window.location.href = redirectUrl;
+        const data = await res.json();
+
+        if (!res.ok || !data.auth_url) {
+          setMessage(data.detail || "Failed to get auth URL from backend.");
+          return;
+        }
+
+        window.location.href = data.auth_url;
+      } catch (err) {
+        console.error(err);
+        setMessage("Failed to contact backend for SMART launch.");
+      }
+    };
+
+    run();
   }, []);
 
-  return <div style={{ padding: 24 }}>Launching Cerner SMART app...</div>;
+  return <div style={{ padding: 24 }}>{message}</div>;
 }
