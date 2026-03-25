@@ -9,24 +9,33 @@ const API_BASE =
 
 function formatDischargeSummary(text) {
   if (!text) return "";
-  const lines = text.split("\n");
-  const patterns = [
-    /^1\.\s*Reason for hospitalization and brief hospital course/i,
-    /^2\.\s*Procedures and key treatments/i,
-    /^3\.\s*Discharge diagnoses/i,
-    /^4\.\s*Discharge medications and changes/i,
-    /^5\.\s*Follow-up and pending items/i,
-  ];
+
+  // Strip common markdown artifacts just in case
+  let cleaned = text.replace(/[#*`]/g, "");
+
+  const lines = cleaned.split("\n");
+
+  // Detect headings: all-caps lines or lines that start with a digit and a period
   const processed = lines.map((line) => {
-    const trimmed = line.trimStart();
-    for (const pattern of patterns) {
-      if (pattern.test(trimmed)) {
-        return `<strong>${trimmed}</strong>`;
-      }
+    const trimmed = line.trim();
+
+    if (!trimmed) return ""; // preserve blank lines
+
+    const isNumbered = /^[0-9]+\./.test(trimmed);
+    const isAllCapsHeading =
+      trimmed === trimmed.toUpperCase() &&
+      trimmed.length > 3 &&
+      !/[0-9]/.test(trimmed);
+
+    if (isNumbered || isAllCapsHeading) {
+      return `<strong>${trimmed}</strong>`;
     }
-    return line;
+
+    return trimmed;
   });
-  return processed.join("\n");
+
+  // Join back with <br/> so paragraphs render with spacing
+  return processed.join("<br/>");
 }
 
 function AppInner() {
