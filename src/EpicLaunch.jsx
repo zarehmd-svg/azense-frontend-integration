@@ -17,13 +17,17 @@ export default function EpicLaunch() {
       try {
         const backend = "https://azense-backend.onrender.com/epic/launch-auth";
         const res = await fetch(
-          `${backend}?iss=${encodeURIComponent(iss)}&launch=${encodeURIComponent(launch)}`
+          `${backend}?iss=${encodeURIComponent(iss)}&launch=${encodeURIComponent(
+            launch
+          )}`
         );
 
         const data = await res.json();
 
         if (!res.ok || !data.auth_url) {
-          setMessage(data.detail || "Failed to get auth URL from backend.");
+          setMessage(
+            data.detail || "Failed to get auth URL from backend."
+          );
           return;
         }
 

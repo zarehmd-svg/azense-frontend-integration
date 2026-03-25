@@ -1,12 +1,11 @@
 // src/App.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AzenseLogo from "./assets/Azense-logo.png";
 import { ChatPanel } from "./components/ChatPanel";
 import EpicLaunch from "./EpicLaunch";
 
 const API_BASE =
   import.meta.env.VITE_API_BASE || "https://azense-backend.onrender.com";
-const EPIC_API_BASE = API_BASE;
 
 function formatDischargeSummary(text) {
   if (!text) return "";
@@ -30,11 +29,7 @@ function formatDischargeSummary(text) {
   return processed.join("\n");
 }
 
-function App() {
-  if (window.location.pathname === "/epic-launch") {
-    return <EpicLaunch />;
-  }
-
+function AppInner() {
   const [loggedIn, setLoggedIn] = useState(
     () => window.localStorage.getItem("azense_logged_in") === "true"
   );
@@ -60,6 +55,21 @@ function App() {
   const [wantProblemInsights, setWantProblemInsights] = useState(true);
 
   const [epicStatus, setEpicStatus] = useState("");
+  const [epicContext, setEpicContext] = useState(null);
+
+  useEffect(() => {
+    const loadEpicContext = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/epic/context`);
+        if (!res.ok) return;
+        const json = await res.json();
+        setEpicContext(json);
+      } catch {
+        // ignore if none
+      }
+    };
+    loadEpicContext();
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -92,14 +102,9 @@ function App() {
   };
 
   const startEpicAuth = async () => {
-    try {
-      setEpicStatus("Use the Cerner launch page to start SMART launch.");
-      setErrorText("");
-    } catch (err) {
-      console.error(err);
-      setEpicStatus("");
-      setErrorText("Unable to start EPIC auth.");
-    }
+    setEpicStatus(
+      "Use Cerner test launch; SMART EHR launch now goes through /epic-launch."
+    );
   };
 
   const runAzense = async () => {
@@ -110,24 +115,27 @@ function App() {
     setTraining(null);
 
     try {
-      const summaryRes = await fetch(
-        `${API_BASE}/generate-summary?patient_id=${encodeURIComponent(
-          patientId || "1"
-        )}` +
+      const useEpic = !!epicContext;
+
+      const summaryUrl = useEpic
+        ? `${API_BASE}/epic/generate-summary`
+        : `${API_BASE}/generate-summary?patient_id=${encodeURIComponent(
+            patientId || "1"
+          )}` +
           `&do_summary=${wantSummary}` +
           `&do_hp=${wantHp}` +
           `&do_coding=${wantCoding}` +
           `&do_insights=${wantInsights}` +
-          `&do_problem_insights=${wantProblemInsights}`,
-        { method: "POST" }
-      );
+          `&do_problem_insights=${wantProblemInsights}`;
+
+      const summaryRes = await fetch(summaryUrl, { method: "POST" });
       if (!summaryRes.ok) {
         throw new Error(`Summary error: ${summaryRes.status}`);
       }
       const summaryJson = await summaryRes.json();
 
       let codingJson = null;
-      if (wantCoding) {
+      if (wantCoding && !useEpic) {
         const codingRes = await fetch(
           `${API_BASE}/coding-diagnoses?patient_id=${encodeURIComponent(
             patientId || "1"
@@ -215,48 +223,27 @@ function App() {
             >
               <span
                 dangerouslySetInnerHTML={{
-                  __html: formatted || "No draft summary available for this patient.",
+                  __html:
+                    formatted ||
+                    "No draft summary available for this patient.",
                 }}
               />
             </pre>
           </>
         );
       }
-
       case "hp":
         return (
           <>
             <h4 style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}>
-              H&amp;P assessment
+              H&P assessment
             </h4>
             <p style={{ margin: "0 0 8px", fontSize: "13px", color: "#111827" }}>
-              {summary?.hp_assessment || "No dedicated H&P assessment generated yet."}
-            </p>
-
-            <h4 style={{ margin: "8px 0 4px", fontSize: "13px", color: "#0F172A" }}>
-              Intake summary
-            </h4>
-            {summary?.hp_intake_summary?.length ? (
-              <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "12px", color: "#1F2937" }}>
-                {summary.hp_intake_summary.map((item, idx) => (
-                  <li key={idx}>{item}</li>
-                ))}
-              </ul>
-            ) : (
-              <p style={{ margin: 0, fontSize: "12px", color: "#4B5563" }}>
-                No structured intake bullets generated.
-              </p>
-            )}
-
-            <h4 style={{ margin: "10px 0 4px", fontSize: "13px", color: "#0F172A" }}>
-              Brief assessment
-            </h4>
-            <p style={{ margin: "0 0 6px", fontSize: "13px", color: "#111827" }}>
-              {summary?.hp_assessment_brief || "No brief H&P assessment generated yet."}
+              {summary?.hp_assessment ||
+                "No dedicated H&P assessment generated yet."}
             </p>
           </>
         );
-
       case "progress":
         return (
           <>
@@ -264,27 +251,25 @@ function App() {
               Progress note
             </h4>
             {summary?.progress_note_summary?.length ? (
-              <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "12px", color: "#1F2937" }}>
+              <ul
+                style={{
+                  margin: 0,
+                  paddingLeft: "18px",
+                  fontSize: "12px",
+                  color: "#1F2937",
+                }}
+              >
                 {summary.progress_note_summary.map((item, idx) => (
                   <li key={idx}>{item}</li>
                 ))}
               </ul>
             ) : (
               <p style={{ margin: 0, fontSize: "12px", color: "#4B5563" }}>
-                No progress-note style summary generated.
+                No progress‑note style summary generated.
               </p>
             )}
-
-            <h4 style={{ margin: "10px 0 4px", fontSize: "13px", color: "#0F172A" }}>
-              Brief assessment
-            </h4>
-            <p style={{ margin: "0 0 6px", fontSize: "13px", color: "#111827" }}>
-              {summary?.progress_assessment_brief ||
-                "No brief progress assessment generated yet."}
-            </p>
           </>
         );
-
       case "coding":
         return (
           <>
@@ -293,10 +278,18 @@ function App() {
             </h4>
             <p style={{ margin: "0 0 6px", fontSize: "13px", color: "#111827" }}>
               <strong>Principal:</strong>{" "}
-              {coding?.principal_diagnosis || "No principal diagnosis available."}
+              {coding?.principal_diagnosis ||
+                "No principal diagnosis available."}
             </p>
             {coding?.secondary_diagnoses?.length ? (
-              <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "12px", color: "#1F2937" }}>
+              <ul
+                style={{
+                  margin: 0,
+                  paddingLeft: "18px",
+                  fontSize: "12px",
+                  color: "#1F2937",
+                }}
+              >
                 {coding.secondary_diagnoses.map((dx, idx) => (
                   <li key={idx}>{dx}</li>
                 ))}
@@ -308,7 +301,6 @@ function App() {
             )}
           </>
         );
-
       case "insights":
         return (
           <>
@@ -316,7 +308,14 @@ function App() {
               Discharge insights
             </h4>
             {summary?.insights?.length ? (
-              <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "12px", color: "#1F2937" }}>
+              <ul
+                style={{
+                  margin: 0,
+                  paddingLeft: "18px",
+                  fontSize: "12px",
+                  color: "#1F2937",
+                }}
+              >
                 {summary.insights.map((it, idx) => (
                   <li key={idx}>{it}</li>
                 ))}
@@ -328,27 +327,32 @@ function App() {
             )}
           </>
         );
-
       case "problem_insights":
         return (
           <>
             <h4 style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}>
-              Problem-list insights
+              Problem‑list insights
             </h4>
             {summary?.problem_list_insights?.length ? (
-              <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "12px", color: "#1F2937" }}>
+              <ul
+                style={{
+                  margin: 0,
+                  paddingLeft: "18px",
+                  fontSize: "12px",
+                  color: "#1F2937",
+                }}
+              >
                 {summary.problem_list_insights.map((it, idx) => (
                   <li key={idx}>{it}</li>
                 ))}
               </ul>
             ) : (
               <p style={{ margin: 0, fontSize: "12px", color: "#4B5563" }}>
-                No problem-list insights generated.
+                No problem‑list insights generated.
               </p>
             )}
           </>
         );
-
       case "training":
         return (
           <>
@@ -357,40 +361,70 @@ function App() {
             </h4>
             {!training ? (
               <p style={{ margin: 0, fontSize: "12px", color: "#4B5563" }}>
-                Click “Explain this note” to generate resident-facing reasoning for this case.
+                Click “Explain this note” to generate resident‑facing reasoning
+                for this case.
               </p>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "12px", color: "#111827" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "6px",
+                  fontSize: "12px",
+                  color: "#111827",
+                }}
+              >
                 <div>
-                  <strong>H&amp;P assessment</strong>
-                  <p style={{ margin: "2px 0 0" }}>{training.hp_assessment_explanation}</p>
-                </div>
-                <div>
-                  <strong>Progress brief</strong>
-                  <p style={{ margin: "2px 0 0" }}>{training.progress_assessment_explanation}</p>
-                </div>
-                <div>
-                  <strong>Coding overview</strong>
-                  <p style={{ margin: "2px 0 0" }}>{training.coding_overview}</p>
+                  <strong>H&P assessment – how Azense got there</strong>
+                  <p style={{ margin: "2px 0 0" }}>
+                    {training.hp_assessment_explanation}
+                  </p>
                 </div>
               </div>
             )}
           </>
         );
-
       default:
         return null;
     }
   };
 
   const TAB_STYLES = {
-    dc_draft: { baseBg: "rgba(14,165,233,0.18)", baseBorder: "rgba(14,165,233,0.60)", baseText: "#0369A1" },
-    hp: { baseBg: "rgba(129,140,248,0.20)", baseBorder: "rgba(79,70,229,0.60)", baseText: "#3730A3" },
-    progress: { baseBg: "rgba(249,115,22,0.18)", baseBorder: "rgba(234,88,12,0.60)", baseText: "#9A3412" },
-    coding: { baseBg: "rgba(244,63,94,0.18)", baseBorder: "rgba(225,29,72,0.60)", baseText: "#9F1239" },
-    insights: { baseBg: "rgba(34,197,94,0.18)", baseBorder: "rgba(22,163,74,0.60)", baseText: "#166534" },
-    problem_insights: { baseBg: "rgba(56,189,248,0.18)", baseBorder: "rgba(8,145,178,0.60)", baseText: "#0E7490" },
-    training: { baseBg: "rgba(196,181,253,0.22)", baseBorder: "rgba(129,140,248,0.80)", baseText: "#4C1D95" },
+    dc_draft: {
+      baseBg: "rgba(14,165,233,0.18)",
+      baseBorder: "rgba(14,165,233,0.60)",
+      baseText: "#0369A1",
+    },
+    hp: {
+      baseBg: "rgba(129,140,248,0.20)",
+      baseBorder: "rgba(79,70,229,0.60)",
+      baseText: "#3730A3",
+    },
+    progress: {
+      baseBg: "rgba(249,115,22,0.18)",
+      baseBorder: "rgba(234,88,12,0.60)",
+      baseText: "#9A3412",
+    },
+    coding: {
+      baseBg: "rgba(244,63,94,0.18)",
+      baseBorder: "rgba(225,29,72,0.60)",
+      baseText: "#9F1239",
+    },
+    insights: {
+      baseBg: "rgba(34,197,94,0.18)",
+      baseBorder: "rgba(22,163,74,0.60)",
+      baseText: "#166534",
+    },
+    problem_insights: {
+      baseBg: "rgba(56,189,248,0.18)",
+      baseBorder: "rgba(8,145,178,0.60)",
+      baseText: "#0E7490",
+    },
+    training: {
+      baseBg: "rgba(196,181,253,0.22)",
+      baseBorder: "rgba(129,140,248,0.80)",
+      baseText: "#4C1D95",
+    },
   };
 
   const tabButton = (id, label) => {
@@ -440,9 +474,6 @@ function App() {
             backgroundColor: "white",
             borderRadius: 16,
             padding: 24,
-            boxShadow:
-              "0 24px 60px rgba(15,23,42,0.28), 0 0 0 1px rgba(15,23,42,0.08)",
-            border: "1px solid rgba(148,163,184,0.4)",
           }}
         >
           <div style={{ textAlign: "center", marginBottom: 16 }}>
@@ -456,7 +487,10 @@ function App() {
             </div>
           </div>
 
-          <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <form
+            onSubmit={handleLogin}
+            style={{ display: "flex", flexDirection: "column", gap: 10 }}
+          >
             <input
               type="text"
               placeholder="Username"
@@ -486,7 +520,9 @@ function App() {
               }}
             />
 
-            {loginError && <div style={{ fontSize: 12, color: "#B91C1C" }}>{loginError}</div>}
+            {loginError && (
+              <div style={{ fontSize: 12, color: "#B91C1C" }}>{loginError}</div>
+            )}
 
             <button
               type="submit"
@@ -497,7 +533,8 @@ function App() {
                 padding: "8px 12px",
                 borderRadius: 999,
                 border: "1px solid rgba(15,23,42,0.9)",
-                background: "linear-gradient(135deg, #020617 0%, #111827 40%, #020617 100%)",
+                background:
+                  "linear-gradient(135deg, #020617 0%, #111827 40%, #020617 100%)",
                 color: "#F9FAFB",
                 fontWeight: 600,
                 fontSize: 13,
@@ -539,26 +576,99 @@ function App() {
           backgroundColor: "rgba(255,255,255,0.985)",
           borderRadius: "20px",
           padding: "24px 28px 30px",
-          boxShadow: "0 26px 70px rgba(4, 23, 51, 0.32)",
-          border: "1px solid rgba(4, 23, 51, 0.20)",
         }}
       >
-        <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "18px", gap: "16px" }}>
+        <header
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: "18px",
+            gap: "16px",
+          }}
+        >
           <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-            <img src={AzenseLogo} alt="AZense logo" style={{ height: "64px", width: "auto", display: "block" }} />
+            <img
+              src={AzenseLogo}
+              alt="AZense logo"
+              style={{ height: "64px", width: "auto", display: "block" }}
+            />
             <div style={{ fontSize: "12px", color: "#334155" }}>
-              Signal-first rounding companion
+              Signal‑first rounding companion
             </div>
+            {epicContext?.patient_resource && (
+              <div
+                style={{
+                  marginTop: 4,
+                  padding: "3px 8px",
+                  borderRadius: 999,
+                  border: "1px solid rgba(37,99,235,0.7)",
+                  backgroundColor: "rgba(59,130,246,0.06)",
+                  fontSize: 11,
+                  color: "#1D4ED8",
+                }}
+              >
+                {(() => {
+                  const p = epicContext.patient_resource;
+                  const nameObj = p.name && p.name[0];
+                  const name =
+                    (nameObj && (nameObj.text ||
+                      `${nameObj.family || ""}, ${
+                        (nameObj.given && nameObj.given[0]) || ""
+                      }`)) || "Unknown";
+                  const dob = p.birthDate || "Unknown DOB";
+                  return `Cerner patient: ${name} · DOB ${dob} · ID ${p.id}`;
+                })()}
+              </div>
+            )}
+          </div>
+
+          <div
+            style={{
+              padding: "4px 10px",
+              borderRadius: "999px",
+              border: "1px solid rgba(0, 194, 174, 0.75)",
+              background:
+                "linear-gradient(120deg, rgba(0,194,174,0.18), rgba(53,217,119,0.14))",
+              fontSize: "11px",
+              fontWeight: 600,
+              color: "#064E3B",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Internal medicine · MVP
           </div>
         </header>
 
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.2fr) minmax(0, 1.4fr)", gap: "20px" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "minmax(0, 1.2fr) minmax(0, 1.4fr)",
+            gap: "20px",
+          }}
+        >
           <section>
-            <div style={{ fontSize: "13px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#475569", marginBottom: "6px" }}>
+            <div
+              style={{
+                fontSize: "13px",
+                fontWeight: 700,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                color: "#475569",
+                marginBottom: "6px",
+              }}
+            >
               Patient context
             </div>
 
-            <div style={{ display: "flex", gap: "8px", marginBottom: "10px", flexWrap: "wrap" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: "8px",
+                marginBottom: "10px",
+                flexWrap: "wrap",
+              }}
+            >
               <input
                 placeholder="Patient id (1–24)"
                 value={patientId}
@@ -570,19 +680,32 @@ function App() {
                   border: "1px solid rgba(15,23,42,0.26)",
                   padding: "7px 9px",
                   fontSize: "13px",
+                  outline: "none",
                   backgroundColor: "#F8FAFC",
+                  color: "#0F172A",
                 }}
               />
             </div>
 
-            <div style={{ marginTop: "4px", marginBottom: "8px", display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center", justifyContent: "space-between" }}>
+            <div
+              style={{
+                marginTop: "4px",
+                marginBottom: "8px",
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "8px",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
               <button
                 onClick={startEpicAuth}
                 style={{
                   padding: "6px 14px",
                   borderRadius: "999px",
                   border: "1px solid rgba(37,99,235,0.9)",
-                  background: "linear-gradient(135deg, #2563EB 0%, #3B82F6 40%, #60A5FA 100%)",
+                  background:
+                    "linear-gradient(135deg, #2563EB 0%, #3B82F6 40%, #60A5FA 100%)",
                   color: "#F9FAFB",
                   fontWeight: 600,
                   fontSize: "12px",
@@ -591,7 +714,11 @@ function App() {
               >
                 Connect to EPIC (sandbox)
               </button>
-              {epicStatus && <span style={{ fontSize: "11px", color: "#1D4ED8" }}>{epicStatus}</span>}
+              {epicStatus && (
+                <span style={{ fontSize: "11px", color: "#1D4ED8" }}>
+                  {epicStatus}
+                </span>
+              )}
             </div>
 
             <textarea
@@ -606,47 +733,101 @@ function App() {
                 padding: "9px 10px",
                 fontSize: "13px",
                 resize: "vertical",
-                background: "linear-gradient(145deg, #F9FAFB 0%, #EEF2FF 40%, #FFFFFF 100%)",
+                outline: "none",
+                background:
+                  "linear-gradient(145deg, #F9FAFB 0%, #EEF2FF 40%, #FFFFFF 100%)",
                 color: "#0F172A",
               }}
             />
 
-            {errorText && <div style={{ marginTop: "8px", fontSize: "12px", color: "#B91C1C" }}>{errorText}</div>}
+            {errorText && (
+              <div style={{ marginTop: "8px", fontSize: "12px", color: "#B91C1C" }}>
+                {errorText}
+              </div>
+            )}
 
-            <div style={{ marginTop: "6px", marginBottom: "6px", fontSize: "11px", color: "#374151", display: "flex", flexWrap: "wrap", gap: "8px 16px" }}>
+            <div
+              style={{
+                marginTop: "6px",
+                marginBottom: "6px",
+                fontSize: "11px",
+                color: "#374151",
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "8px 16px",
+              }}
+            >
               <span style={{ fontWeight: 600 }}>Generate:</span>
 
-              <label style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                <input type="checkbox" checked={wantSummary} onChange={(e) => setWantSummary(e.target.checked)} />
+              <label
+                style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+              >
+                <input
+                  type="checkbox"
+                  checked={wantSummary}
+                  onChange={(e) => setWantSummary(e.target.checked)}
+                />
                 <span>Discharge summary</span>
               </label>
 
-              <label style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                <input type="checkbox" checked={wantHp} onChange={(e) => setWantHp(e.target.checked)} />
-                <span>H&amp;P / progress</span>
+              <label
+                style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+              >
+                <input
+                  type="checkbox"
+                  checked={wantHp}
+                  onChange={(e) => setWantHp(e.target.checked)}
+                />
+                <span>H&P / progress</span>
               </label>
 
-              <label style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                <input type="checkbox" checked={wantCoding} onChange={(e) => setWantCoding(e.target.checked)} />
+              <label
+                style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+              >
+                <input
+                  type="checkbox"
+                  checked={wantCoding}
+                  onChange={(e) => setWantCoding(e.target.checked)}
+                  disabled={!!epicContext}
+                />
                 <span>Coding dx</span>
               </label>
 
-              <label style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                <input type="checkbox" checked={wantInsights} onChange={(e) => setWantInsights(e.target.checked)} />
+              <label
+                style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+              >
+                <input
+                  type="checkbox"
+                  checked={wantInsights}
+                  onChange={(e) => setWantInsights(e.target.checked)}
+                />
                 <span>DC insights</span>
               </label>
 
-              <label style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <label
+                style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+              >
                 <input
                   type="checkbox"
                   checked={wantProblemInsights}
-                  onChange={(e) => setWantProblemInsights(e.target.checked)}
+                  onChange={(e) =>
+                    setWantProblemInsights(e.target.checked)
+                  }
                 />
                 <span>Problem-list insights</span>
               </label>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "10px", gap: "8px", flexWrap: "wrap" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginTop: "10px",
+                gap: "8px",
+                flexWrap: "wrap",
+              }}
+            >
               <button
                 onClick={runAzense}
                 disabled={loading}
@@ -654,7 +835,8 @@ function App() {
                   padding: "8px 16px",
                   borderRadius: "999px",
                   border: "1px solid rgba(4,120,87,0.9)",
-                  background: "linear-gradient(135deg, #059669 0%, #16A34A 40%, #22C55E 100%)",
+                  background:
+                    "linear-gradient(135deg, #059669 0%, #16A34A 40%, #22C55E 100%)",
                   color: "#F9FAFB",
                   fontWeight: 700,
                   fontSize: "13px",
@@ -671,15 +853,19 @@ function App() {
                   padding: "7px 14px",
                   borderRadius: "999px",
                   border: "1px solid rgba(79,70,229,0.9)",
-                  background: "linear-gradient(135deg, #4F46E5 0%, #6366F1 40%, #818CF8 100%)",
+                  background:
+                    "linear-gradient(135deg, #4F46E5 0%, #6366F1 40%, #818CF8 100%)",
                   color: "#F9FAFB",
                   fontWeight: 600,
                   fontSize: "12px",
-                  cursor: trainingLoading || !summary ? "not-allowed" : "pointer",
+                  cursor:
+                    trainingLoading || !summary ? "not-allowed" : "pointer",
                   opacity: trainingLoading || !summary ? 0.7 : 1,
                 }}
               >
-                {trainingLoading ? "Loading Resident view…" : "Azense for Residents"}
+                {trainingLoading
+                  ? "Loading Resident view…"
+                  : "Azense for Residents"}
               </button>
             </div>
 
@@ -690,14 +876,22 @@ function App() {
             style={{
               borderRadius: "14px",
               border: "1px solid rgba(15,23,42,0.18)",
-              background: "linear-gradient(155deg, rgba(15,23,42,0.04), rgba(0,194,174,0.06))",
+              background:
+                "linear-gradient(155deg, rgba(15,23,42,0.04), rgba(0,194,174,0.06))",
               padding: "10px 11px 11px",
               display: "flex",
               flexDirection: "column",
               gap: "8px",
             }}
           >
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "8px" }}>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "6px",
+                marginBottom: "8px",
+              }}
+            >
               {tabButton("dc_draft", "Discharge")}
               {tabButton("hp", "H&P")}
               {tabButton("progress", "Progress note")}
@@ -727,6 +921,13 @@ function App() {
       </div>
     </div>
   );
+}
+
+function App() {
+  if (window.location.pathname === "/epic-launch") {
+    return <EpicLaunch />;
+  }
+  return <AppInner />;
 }
 
 export default App;
