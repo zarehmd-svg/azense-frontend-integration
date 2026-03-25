@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export default function cernerLaunch() {
+export default function CernerLaunch() {
   const [message, setMessage] = useState("Launching Cerner SMART app...");
 
   useEffect(() => {
