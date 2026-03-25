@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import AzenseLogo from "./assets/Azense-logo.png";
 import { ChatPanel } from "./components/ChatPanel";
-import cernerLaunch from "./cernerLaunch";
+import CernerLaunch from "./CernerLaunch";
 
 const API_BASE =
   import.meta.env.VITE_API_BASE || "https://azense-backend.onrender.com";
@@ -54,21 +54,21 @@ function AppInner() {
   const [wantInsights, setWantInsights] = useState(true);
   const [wantProblemInsights, setWantProblemInsights] = useState(true);
 
-  const [cernerStatus, setcernerStatus] = useState("");
-  const [cernerContext, setcernerContext] = useState(null);
+  const [cernerStatus, setCernerStatus] = useState("");
+  const [cernerContext, setCernerContext] = useState(null);
 
   useEffect(() => {
-    const loadcernerContext = async () => {
+    const loadCernerContext = async () => {
       try {
         const res = await fetch(`${API_BASE}/cerner/context`);
         if (!res.ok) return;
         const json = await res.json();
-        setcernerContext(json);
+        setCernerContext(json);
       } catch {
         // ignore if none
       }
     };
-    loadcernerContext();
+    loadCernerContext();
   }, []);
 
   const handleLogin = async (e) => {
@@ -101,8 +101,8 @@ function AppInner() {
     }
   };
 
-  const startcernerAuth = async () => {
-    setcernerStatus(
+  const startCernerAuth = async () => {
+    setCernerStatus(
       "Use Cerner test launch; SMART EHR launch now goes through /cerner-launch."
     );
   };
@@ -115,9 +115,9 @@ function AppInner() {
     setTraining(null);
 
     try {
-      const usecerner = !!cernerContext;
+      const useCerner = !!cernerContext;
 
-      const summaryUrl = usecerner
+      const summaryUrl = useCerner
         ? `${API_BASE}/cerner/generate-summary`
         : `${API_BASE}/generate-summary?patient_id=${encodeURIComponent(
             patientId || "1"
@@ -135,7 +135,7 @@ function AppInner() {
       const summaryJson = await summaryRes.json();
 
       let codingJson = null;
-      if (wantCoding && !usecerner) {
+      if (wantCoding && !useCerner) {
         const codingRes = await fetch(
           `${API_BASE}/coding-diagnoses?patient_id=${encodeURIComponent(
             patientId || "1"
@@ -612,10 +612,12 @@ function AppInner() {
                   const p = cernerContext.patient_resource;
                   const nameObj = p.name && p.name[0];
                   const name =
-                    (nameObj && (nameObj.text ||
-                      `${nameObj.family || ""}, ${
-                        (nameObj.given && nameObj.given[0]) || ""
-                      }`)) || "Unknown";
+                    (nameObj &&
+                      (nameObj.text ||
+                        `${nameObj.family || ""}, ${
+                          (nameObj.given && nameObj.given[0]) || ""
+                        }`)) ||
+                    "Unknown";
                   const dob = p.birthDate || "Unknown DOB";
                   return `Cerner patient: ${name} · DOB ${dob} · ID ${p.id}`;
                 })()}
@@ -699,7 +701,7 @@ function AppInner() {
               }}
             >
               <button
-                onClick={startcernerAuth}
+                onClick={startCernerAuth}
                 style={{
                   padding: "6px 14px",
                   borderRadius: "999px",
@@ -712,7 +714,7 @@ function AppInner() {
                   cursor: "pointer",
                 }}
               >
-                Connect to cerner (sandbox)
+                Connect to Cerner (sandbox)
               </button>
               {cernerStatus && (
                 <span style={{ fontSize: "11px", color: "#1D4ED8" }}>
@@ -741,7 +743,9 @@ function AppInner() {
             />
 
             {errorText && (
-              <div style={{ marginTop: "8px", fontSize: "12px", color: "#B91C1C" }}>
+              <div
+                style={{ marginTop: "8px", fontSize: "12px", color: "#B91C1C" }}
+              >
                 {errorText}
               </div>
             )}
@@ -925,7 +929,7 @@ function AppInner() {
 
 function App() {
   if (window.location.pathname === "/cerner-launch") {
-    return <cernerLaunch />;
+    return <CernerLaunch />;
   }
   return <AppInner />;
 }
