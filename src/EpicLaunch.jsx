@@ -18,5 +18,5 @@ export default function EpicLaunch() {
     window.location.href = redirectUrl;
   }, []);
 
-  return <div>Launching Cerner SMART app...</div>;
+  return <div style={{ padding: 24 }}>Launching Cerner SMART app...</div>;
 }
