@@ -17,7 +17,7 @@ function formatDischargeSummary(text) {
     const trimmed = line.trim();
     if (!trimmed) return "";
 
-    const isNumbered = /^[0-9]+\./test(trimmed);
+    const isNumbered = /^[0-9]+\./.test(trimmed);
     const isAllCapsHeading =
       trimmed === trimmed.toUpperCase() &&
       trimmed.length > 3 &&
