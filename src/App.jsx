@@ -412,67 +412,49 @@ function AppInner() {
             )}
           </>
         );
-      case "problem_insights":
-        return (
-          <>
-            <h4
-              style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}
-            >
-              Problem‑list insights
-            </h4>
-            {summary?.problem_list_insights?.length ? (
-              <ul
-                style={{
-                  margin: 0,
-                  paddingLeft: "18px",
-                  fontSize: "12px",
-                  color: "#1F2937",
-                }}
-              >
-                {summary.problem_list_insights.map((it, idx) => (
-                  <li key={idx}>{it}</li>
-                ))}
-              </ul>
-            ) : (
-              <p style={{ margin: 0, fontSize: "12px", color: "#4B5563" }}>
-                No problem‑list insights generated.
-              </p>
-            )}
-          </>
-        );
       case "training":
-        return (
-          <>
-            <h4
-              style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}
-            >
-              Azense for Residents
-            </h4>
-            {!training ? (
-              <p style={{ margin: 0, fontSize: "12px", color: "#4B5563" }}>
-                Click “Explain this note” to generate resident‑facing reasoning
-                for this case.
+  return (
+    <>
+      <h4
+        style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}
+      >
+        Azense for Residents
+      </h4>
+      {!training ? (
+        <p style={{ margin: 0, fontSize: "12px", color: "#4B5563" }}>
+          Click “Explain this note” to generate resident‑facing reasoning
+          for this case.
+        </p>
+      ) : (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+            fontSize: "12px",
+            color: "#111827",
+          }}
+        >
+          <div>
+            <strong>H&P assessment – how Azense got there</strong>
+            <p style={{ margin: "2px 0 0" }}>
+              {training.hp_assessment_explanation}
+            </p>
+          </div>
+
+          {training.coding_diagnoses_explanation && (
+            <div>
+              <strong>Coding diagnoses – teaching points</strong>
+              <p style={{ margin: "2px 0 0" }}>
+                {training.coding_diagnoses_explanation}
               </p>
-            ) : (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "6px",
-                  fontSize: "12px",
-                  color: "#111827",
-                }}
-              >
-                <div>
-                  <strong>H&P assessment – how Azense got there</strong>
-                  <p style={{ margin: "2px 0 0" }}>
-                    {training.hp_assessment_explanation}
-                  </p>
-                </div>
-              </div>
-            )}
-          </>
-        );
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  );
+
       default:
         return null;
     }
