@@ -412,6 +412,36 @@ function AppInner() {
             )}
           </>
         );
+
+              case "problem_insights":
+        return (
+          <>
+            <h4
+              style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}
+            >
+              Problem‑list insights
+            </h4>
+            {summary?.problem_list_insights?.length ? (
+              <ul
+                style={{
+                  margin: 0,
+                  paddingLeft: "18px",
+                  fontSize: "12px",
+                  color: "#1F2937",
+                }}
+              >
+                {summary.problem_list_insights.map((it, idx) => (
+                  <li key={idx}>{it}</li>
+                ))}
+              </ul>
+            ) : (
+              <p style={{ margin: 0, fontSize: "12px", color: "#4B5563" }}>
+                No problem‑list insights generated.
+              </p>
+            )}
+          </>
+        );
+
       case "training":
   return (
     <>
