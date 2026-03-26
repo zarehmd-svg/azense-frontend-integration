@@ -55,7 +55,7 @@ function AppInner() {
   const [loading, setLoading] = useState(false);
   const [trainingLoading, setTrainingLoading] = useState(false);
   const [errorText, setErrorText] = useState("");
-  const [activeView, setActiveView] = useState("dc_draft");
+  const [activeView, setActiveView] = useState("hp");
 
   const [wantSummary, setWantSummary] = useState(true);
   const [wantHp, setWantHp] = useState(true);
