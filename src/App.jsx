@@ -10,18 +10,14 @@ const API_BASE =
 function formatDischargeSummary(text) {
   if (!text) return "";
 
-  // Strip common markdown artifacts just in case
   let cleaned = text.replace(/[#*`]/g, "");
-
   const lines = cleaned.split("\n");
 
-  // Detect headings: all-caps lines or lines that start with a digit and a period
   const processed = lines.map((line) => {
     const trimmed = line.trim();
+    if (!trimmed) return "";
 
-    if (!trimmed) return ""; // preserve blank lines
-
-    const isNumbered = /^[0-9]+\./.test(trimmed);
+    const isNumbered = /^[0-9]+\./test(trimmed);
     const isAllCapsHeading =
       trimmed === trimmed.toUpperCase() &&
       trimmed.length > 3 &&
@@ -34,7 +30,6 @@ function formatDischargeSummary(text) {
     return trimmed;
   });
 
-  // Join back with <br/> so paragraphs render with spacing
   return processed.join("<br/>");
 }
 
@@ -220,7 +215,9 @@ function AppInner() {
         );
         return (
           <>
-            <h4 style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}>
+            <h4
+              style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}
+            >
               Discharge summary
             </h4>
             <pre
@@ -247,21 +244,91 @@ function AppInner() {
       case "hp":
         return (
           <>
-            <h4 style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}>
+            <h4
+              style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}
+            >
               H&P assessment
             </h4>
-            <p style={{ margin: "0 0 8px", fontSize: "13px", color: "#111827" }}>
+
+            {/* Brief assessment on top */}
+            {summary?.hp_assessment_brief && (
+              <p
+                style={{
+                  margin: "0 0 6px",
+                  fontSize: "13px",
+                  color: "#111827",
+                  fontWeight: 600,
+                }}
+              >
+                {summary.hp_assessment_brief}
+              </p>
+            )}
+
+            {/* Full assessment */}
+            <p
+              style={{
+                margin: "0 0 8px",
+                fontSize: "13px",
+                color: "#111827",
+              }}
+            >
               {summary?.hp_assessment ||
                 "No dedicated H&P assessment generated yet."}
             </p>
+
+            {/* Problem list */}
+            {summary?.encounter_problem_list?.length > 0 && (
+              <div style={{ marginTop: "4px" }}>
+                <h5
+                  style={{
+                    margin: "0 0 4px",
+                    fontSize: "12px",
+                    color: "#0F172A",
+                    fontWeight: 600,
+                  }}
+                >
+                  Problem list
+                </h5>
+                <ul
+                  style={{
+                    margin: 0,
+                    paddingLeft: "18px",
+                    fontSize: "12px",
+                    color: "#1F2937",
+                  }}
+                >
+                  {summary.encounter_problem_list.map((item, idx) => (
+                    <li key={idx}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </>
         );
       case "progress":
         return (
           <>
-            <h4 style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}>
+            <h4
+              style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}
+            >
               Progress note
             </h4>
+
+            {/* Brief progress assessment */}
+            {summary?.progress_assessment_brief && (
+              <p
+                style={{
+                  margin: "0 0 6px",
+                  fontSize: "13px",
+                  color: "#111827",
+                  fontWeight: 600,
+                }}
+              >
+                {summary.progress_assessment_brief}
+              </p>
+            )}
+
+            {/* Progress bullets */}
             {summary?.progress_note_summary?.length ? (
               <ul
                 style={{
@@ -285,10 +352,14 @@ function AppInner() {
       case "coding":
         return (
           <>
-            <h4 style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}>
+            <h4
+              style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}
+            >
               Coding diagnoses
             </h4>
-            <p style={{ margin: "0 0 6px", fontSize: "13px", color: "#111827" }}>
+            <p
+              style={{ margin: "0 0 6px", fontSize: "13px", color: "#111827" }}
+            >
               <strong>Principal:</strong>{" "}
               {coding?.principal_diagnosis ||
                 "No principal diagnosis available."}
@@ -316,7 +387,9 @@ function AppInner() {
       case "insights":
         return (
           <>
-            <h4 style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}>
+            <h4
+              style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}
+            >
               Discharge insights
             </h4>
             {summary?.insights?.length ? (
@@ -342,7 +415,9 @@ function AppInner() {
       case "problem_insights":
         return (
           <>
-            <h4 style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}>
+            <h4
+              style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}
+            >
               Problem‑list insights
             </h4>
             {summary?.problem_list_insights?.length ? (
@@ -368,7 +443,9 @@ function AppInner() {
       case "training":
         return (
           <>
-            <h4 style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}>
+            <h4
+              style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}
+            >
               Azense for Residents
             </h4>
             {!training ? (
@@ -776,7 +853,11 @@ function AppInner() {
               <span style={{ fontWeight: 600 }}>Generate:</span>
 
               <label
-                style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}
               >
                 <input
                   type="checkbox"
@@ -787,7 +868,11 @@ function AppInner() {
               </label>
 
               <label
-                style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}
               >
                 <input
                   type="checkbox"
@@ -798,7 +883,11 @@ function AppInner() {
               </label>
 
               <label
-                style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}
               >
                 <input
                   type="checkbox"
@@ -810,7 +899,11 @@ function AppInner() {
               </label>
 
               <label
-                style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}
               >
                 <input
                   type="checkbox"
@@ -821,7 +914,11 @@ function AppInner() {
               </label>
 
               <label
-                style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                }}
               >
                 <input
                   type="checkbox"
