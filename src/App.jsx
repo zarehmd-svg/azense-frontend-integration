@@ -201,6 +201,7 @@ function AppInner() {
   };
 
   const renderOutput = () => {
+    console.log("SUMMARY FROM BACKEND", summary);
     if (!summary && !coding) {
       return (
         <p style={{ margin: 0, color: "#4B5563", fontSize: "12px" }}>
