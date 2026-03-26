@@ -198,140 +198,97 @@ function AppInner() {
   };
 
   const renderOutput = () => {
-    console.log("SUMMARY FROM BACKEND", summary);
-    if (!summary && !coding) {
-      console.log("ACTIVE VIEW:", activeView);
-console.log("PROBLEM LIST INSIGHTS VALUE:", summary?.problem_list_insights);
+  console.log("SUMMARY FROM BACKEND", summary);
+  if (!summary && !coding) {
+    return (
+      <p style={{ margin: 0, color: "#4B5563", fontSize: "12px" }}>
+        Enter a patient id (1–24) and click “Run AZense” to generate a draft
+        discharge summary, coding suggestions, and AZense insights.
+      </p>
+    );
+  }
+
+  console.log("ACTIVE VIEW:", activeView);
+  console.log("PROBLEM LIST INSIGHTS VALUE:", summary?.problem_list_insights);
+
+  switch (activeView) {
+    case "dc_draft": {
+      const formatted = formatDischargeSummary(
+        summary?.draft_discharge_summary || ""
+      );
       return (
-        <p style={{ margin: 0, color: "#4B5563", fontSize: "12px" }}>
-          Enter a patient id (1–24) and click “Run AZense” to generate a draft
-          discharge summary, coding suggestions, and AZense insights.
-        </p>
+        <>
+          <h4
+            style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}
+          >
+            Discharge summary
+          </h4>
+          <pre
+            style={{
+              margin: 0,
+              whiteSpace: "pre-wrap",
+              fontFamily:
+                "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+              fontSize: "13px",
+              color: "#111827",
+            }}
+          >
+            <span
+              dangerouslySetInnerHTML={{
+                __html:
+                  formatted ||
+                  "No draft summary available for this patient.",
+              }}
+            />
+          </pre>
+        </>
       );
     }
+    case "hp":
+      return (
+        <>
+          <h4
+            style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}
+          >
+            H&P assessment
+          </h4>
 
-    switch (activeView) {
-      case "dc_draft": {
-        const formatted = formatDischargeSummary(
-          summary?.draft_discharge_summary || ""
-        );
-        return (
-          <>
-            <h4
-              style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}
-            >
-              Discharge summary
-            </h4>
-            <pre
-              style={{
-                margin: 0,
-                whiteSpace: "pre-wrap",
-                fontFamily:
-                  "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
-                fontSize: "13px",
-                color: "#111827",
-              }}
-            >
-              <span
-                dangerouslySetInnerHTML={{
-                  __html:
-                    formatted ||
-                    "No draft summary available for this patient.",
-                }}
-              />
-            </pre>
-          </>
-        );
-      }
-      case "hp":
-        return (
-          <>
-            <h4
-              style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}
-            >
-              H&P assessment
-            </h4>
-
-            {/* Brief assessment on top */}
-            {summary?.hp_assessment_brief && (
-              <p
-                style={{
-                  margin: "0 0 6px",
-                  fontSize: "13px",
-                  color: "#111827",
-                  fontWeight: 600,
-                }}
-              >
-                {summary.hp_assessment_brief}
-              </p>
-            )}
-
-            {/* Full assessment */}
+          {summary?.hp_assessment_brief && (
             <p
               style={{
-                margin: "0 0 8px",
+                margin: "0 0 6px",
                 fontSize: "13px",
                 color: "#111827",
+                fontWeight: 600,
               }}
             >
-              {summary?.hp_assessment ||
-                "No dedicated H&P assessment generated yet."}
+              {summary.hp_assessment_brief}
             </p>
+          )}
 
-            {/* Problem list */}
-            {summary?.encounter_problem_list?.length > 0 && (
-              <div style={{ marginTop: "4px" }}>
-                <h5
-                  style={{
-                    margin: "0 0 4px",
-                    fontSize: "12px",
-                    color: "#0F172A",
-                    fontWeight: 600,
-                  }}
-                >
-                  Problem list
-                </h5>
-                <ul
-                  style={{
-                    margin: 0,
-                    paddingLeft: "18px",
-                    fontSize: "12px",
-                    color: "#1F2937",
-                  }}
-                >
-                  {summary.encounter_problem_list.map((item, idx) => (
-                    <li key={idx}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </>
-        );
-      case "progress":
-        return (
-          <>
-            <h4
-              style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}
-            >
-              Progress note
-            </h4>
+          <p
+            style={{
+              margin: "0 0 8px",
+              fontSize: "13px",
+              color: "#111827",
+            }}
+          >
+            {summary?.hp_assessment ||
+              "No dedicated H&P assessment generated yet."}
+          </p>
 
-            {/* Brief progress assessment */}
-            {summary?.progress_assessment_brief && (
-              <p
+          {summary?.encounter_problem_list?.length > 0 && (
+            <div style={{ marginTop: "4px" }}>
+              <h5
                 style={{
-                  margin: "0 0 6px",
-                  fontSize: "13px",
-                  color: "#111827",
+                  margin: "0 0 4px",
+                  fontSize: "12px",
+                  color: "#0F172A",
                   fontWeight: 600,
                 }}
               >
-                {summary.progress_assessment_brief}
-              </p>
-            )}
-
-            {/* Progress bullets */}
-            {summary?.progress_note_summary?.length ? (
+                Problem list
+              </h5>
               <ul
                 style={{
                   margin: 0,
@@ -340,170 +297,206 @@ console.log("PROBLEM LIST INSIGHTS VALUE:", summary?.problem_list_insights);
                   color: "#1F2937",
                 }}
               >
-                {summary.progress_note_summary.map((item, idx) => (
+                {summary.encounter_problem_list.map((item, idx) => (
                   <li key={idx}>{item}</li>
                 ))}
               </ul>
-            ) : (
-              <p style={{ margin: 0, fontSize: "12px", color: "#4B5563" }}>
-                No progress‑note style summary generated.
-              </p>
-            )}
-          </>
-        );
-      case "coding":
-        return (
-          <>
-            <h4
-              style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}
-            >
-              Coding diagnoses
-            </h4>
-            <p
-              style={{ margin: "0 0 6px", fontSize: "13px", color: "#111827" }}
-            >
-              <strong>Principal:</strong>{" "}
-              {coding?.principal_diagnosis ||
-                "No principal diagnosis available."}
-            </p>
-            {coding?.secondary_diagnoses?.length ? (
-              <ul
-                style={{
-                  margin: 0,
-                  paddingLeft: "18px",
-                  fontSize: "12px",
-                  color: "#1F2937",
-                }}
-              >
-                {coding.secondary_diagnoses.map((dx, idx) => (
-                  <li key={idx}>{dx}</li>
-                ))}
-              </ul>
-            ) : (
-              <p style={{ margin: 0, fontSize: "12px", color: "#4B5563" }}>
-                No secondary diagnoses returned.
-              </p>
-            )}
-          </>
-        );
-      case "insights":
-        return (
-          <>
-            <h4
-              style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}
-            >
-              Discharge insights
-            </h4>
-            {summary?.insights?.length ? (
-              <ul
-                style={{
-                  margin: 0,
-                  paddingLeft: "18px",
-                  fontSize: "12px",
-                  color: "#1F2937",
-                }}
-              >
-                {summary.insights.map((it, idx) => (
-                  <li key={idx}>{it}</li>
-                ))}
-              </ul>
-            ) : (
-              <p style={{ margin: 0, fontSize: "12px", color: "#4B5563" }}>
-                No discharge planning insights generated.
-              </p>
-            )}
-          </>
-        );
-
-      case "problem_insights":
-       return (
-    <>
-      <h4
-        style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}
-      >
-        Problem‑list insights
-      </h4>
-      <pre
-        style={{
-          margin: "0 0 6px",
-          fontSize: "11px",
-          color: "#6B7280",
-          backgroundColor: "#F9FAFB",
-          padding: "4px 6px",
-          borderRadius: "6px",
-        }}
-      >
-        {JSON.stringify(summary?.problem_list_insights, null, 2)}
-      </pre>
-      {summary?.problem_list_insights?.length ? (
-        <ul
-          style={{
-            margin: 0,
-            paddingLeft: "18px",
-            fontSize: "12px",
-            color: "#1F2937",
-          }}
-        >
-          {summary.problem_list_insights.map((it, idx) => (
-            <li key={idx}>{it}</li>
-          ))}
-        </ul>
-      ) : (
-        <p style={{ margin: 0, fontSize: "12px", color: "#4B5563" }}>
-          No problem‑list insights generated.
-        </p>
-      )}
-    </>
-  );
-
-
-      case "training":
-  return (
-    <>
-      <h4
-        style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}
-      >
-        Azense for Residents
-      </h4>
-      {!training ? (
-        <p style={{ margin: 0, fontSize: "12px", color: "#4B5563" }}>
-          Click “Explain this note” to generate resident‑facing reasoning
-          for this case.
-        </p>
-      ) : (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "10px",
-            fontSize: "12px",
-            color: "#111827",
-          }}
-        >
-          <div>
-            <strong>H&P assessment – how Azense got there</strong>
-            <p style={{ margin: "2px 0 0" }}>
-              {training.hp_assessment_explanation}
-            </p>
-          </div>
-
-          {training.coding_diagnoses_explanation && (
-            <div>
-              <strong>Coding diagnoses – teaching points</strong>
-              <p style={{ margin: "2px 0 0" }}>
-                {training.coding_diagnoses_explanation}
-              </p>
             </div>
           )}
-        </div>
-      )}
-    </>
-  );
+        </>
+      );
+    case "progress":
+      return (
+        <>
+          <h4
+            style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}
+          >
+            Progress note
+          </h4>
 
-      default:
-        return null;
-    }
-  };
+          {summary?.progress_assessment_brief && (
+            <p
+              style={{
+                margin: "0 0 6px",
+                fontSize: "13px",
+                color: "#111827",
+                fontWeight: 600,
+              }}
+            >
+              {summary.progress_assessment_brief}
+            </p>
+          )}
+
+          {summary?.progress_note_summary?.length ? (
+            <ul
+              style={{
+                margin: 0,
+                paddingLeft: "18px",
+                fontSize: "12px",
+                color: "#1F2937",
+              }}
+            >
+              {summary.progress_note_summary.map((item, idx) => (
+                <li key={idx}>{item}</li>
+              ))}
+            </ul>
+          ) : (
+            <p style={{ margin: 0, fontSize: "12px", color: "#4B5563" }}>
+              No progress‑note style summary generated.
+            </p>
+          )}
+        </>
+      );
+    case "coding":
+      return (
+        <>
+          <h4
+            style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}
+          >
+            Coding diagnoses
+          </h4>
+          <p
+            style={{ margin: "0 0 6px", fontSize: "13px", color: "#111827" }}
+          >
+            <strong>Principal:</strong>{" "}
+            {coding?.principal_diagnosis ||
+              "No principal diagnosis available."}
+          </p>
+          {coding?.secondary_diagnoses?.length ? (
+            <ul
+              style={{
+                margin: 0,
+                paddingLeft: "18px",
+                fontSize: "12px",
+                color: "#1F2937",
+              }}
+            >
+              {coding.secondary_diagnoses.map((dx, idx) => (
+                <li key={idx}>{dx}</li>
+              ))}
+            </ul>
+          ) : (
+            <p style={{ margin: 0, fontSize: "12px", color: "#4B5563" }}>
+              No secondary diagnoses returned.
+            </p>
+          )}
+        </>
+      );
+    case "insights":
+      return (
+        <>
+          <h4
+            style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}
+          >
+            Discharge insights
+          </h4>
+          {summary?.insights?.length ? (
+            <ul
+              style={{
+                margin: 0,
+                paddingLeft: "18px",
+                fontSize: "12px",
+                color: "#1F2937",
+              }}
+            >
+              {summary.insights.map((it, idx) => (
+                <li key={idx}>{it}</li>
+              ))}
+            </ul>
+          ) : (
+            <p style={{ margin: 0, fontSize: "12px", color: "#4B5563" }}>
+              No discharge planning insights generated.
+            </p>
+          )}
+        </>
+      );
+    case "problem_insights":
+      return (
+        <>
+          <h4
+            style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}
+          >
+            Problem‑list insights
+          </h4>
+          <pre
+            style={{
+              margin: "0 0 6px",
+              fontSize: "11px",
+              color: "#6B7280",
+              backgroundColor: "#F9FAFB",
+              padding: "4px 6px",
+              borderRadius: "6px",
+            }}
+          >
+            {JSON.stringify(summary?.problem_list_insights, null, 2)}
+          </pre>
+          {summary?.problem_list_insights?.length ? (
+            <ul
+              style={{
+                margin: 0,
+                paddingLeft: "18px",
+                fontSize: "12px",
+                color: "#1F2937",
+              }}
+            >
+              {summary.problem_list_insights.map((it, idx) => (
+                <li key={idx}>{it}</li>
+              ))}
+            </ul>
+          ) : (
+            <p style={{ margin: 0, fontSize: "12px", color: "#4B5563" }}>
+              No problem‑list insights generated.
+            </p>
+          )}
+        </>
+      );
+    case "training":
+      return (
+        <>
+          <h4
+            style={{ margin: "0 0 6px", fontSize: "13px", color: "#0F172A" }}
+          >
+            Azense for Residents
+          </h4>
+          {!training ? (
+            <p style={{ margin: 0, fontSize: "12px", color: "#4B5563" }}>
+              Click “Explain this note” to generate resident‑facing reasoning
+              for this case.
+            </p>
+          ) : (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
+                fontSize: "12px",
+                color: "#111827",
+              }}
+            >
+              <div>
+                <strong>H&P assessment – how Azense got there</strong>
+                <p style={{ margin: "2px 0 0" }}>
+                  {training.hp_assessment_explanation}
+                </p>
+              </div>
+
+              {training.coding_diagnoses_explanation && (
+                <div>
+                  <strong>Coding diagnoses – teaching points</strong>
+                  <p style={{ margin: "2px 0 0" }}>
+                    {training.coding_diagnoses_explanation}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      );
+    default:
+      return null;
+  }
+};
+
 
   const TAB_STYLES = {
     dc_draft: {
