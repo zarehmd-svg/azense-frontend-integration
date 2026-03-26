@@ -143,6 +143,8 @@ function AppInner() {
       }
       const summaryJson = await summaryRes.json();
 
+      console.log("SUMMARY JSON FROM BACKEND", summaryJson);
+
       let codingJson = null;
       if (wantCoding && !useCerner) {
         const codingRes = await fetch(
