@@ -5,7 +5,7 @@ import { ChatPanel } from "./components/ChatPanel";
 import CernerLaunch from "./CernerLaunch";
 
 const API_BASE =
-  import.meta.env.VITE_API_BASE || "https://azense-backend.onrender.com";
+  import.meta.env.VITE_API_BASE || "https://azense-backend-integration.onrender.com";
 
 function formatDischargeSummary(text) {
   if (!text) return "";
