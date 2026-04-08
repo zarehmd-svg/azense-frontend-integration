@@ -1040,6 +1040,19 @@ function AppInner() {
             </div>
           </section>
         </div>
+        {/* LLC Footer */}
+        <div style={{
+          padding: "8px 16px",
+          borderTop: "1px solid #E2E8F0",
+          background: "#FAFBFC",
+          textAlign: "center",
+          fontSize: 10,
+          color: "#94A3B8",
+          letterSpacing: "0.02em",
+          flexShrink: 0,
+        }}>
+          © 2026 Azense AI LLC. All rights reserved.
+        </div>
       </div>
     </div>
   );
