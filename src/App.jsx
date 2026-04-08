@@ -7,6 +7,10 @@ import CernerLaunch from "./CernerLaunch";
 const API_BASE =
   import.meta.env.VITE_API_BASE || "https://azense-backend-integration.onrender.com";
 
+// Auth server (training backend) — handles signup/login for all Azense apps
+const AUTH_BASE =
+  import.meta.env.VITE_AUTH_BASE || "https://azense-backend-training.onrender.com";
+
 function formatDischargeSummary(text) {
   if (!text) return "";
 
@@ -41,6 +45,14 @@ function AppInner() {
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
+
+  // Trial / signup state
+  const [showSignup, setShowSignup] = useState(false);
+  const [signupData, setSignupData] = useState({
+    first_name: "", last_name: "", role: "student", institution: "", email: "", username: "", password: "",
+  });
+  const [signupLoading, setSignupLoading] = useState(false);
+  const [signupError, setSignupError] = useState("");
 
   const [patientId, setPatientId] = useState("1");
   const [input, setInput] = useState("");
@@ -89,7 +101,10 @@ function AppInner() {
         }),
       });
       if (!res.ok) {
-        throw new Error(`Login error: ${res.status}`);
+        const errJson = await res.json().catch(() => null);
+        const detail = errJson?.detail || "Invalid username or password.";
+        setLoginError(detail);
+        return;
       }
       const json = await res.json();
       if (!json.token) {
@@ -99,9 +114,39 @@ function AppInner() {
       setLoggedIn(true);
     } catch (err) {
       console.error(err);
-      setLoginError("Invalid username or password.");
+      if (!loginError) setLoginError("Invalid username or password.");
     } finally {
       setLoginLoading(false);
+    }
+  };
+
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    setSignupError("");
+    setSignupLoading(true);
+    try {
+      const res = await fetch(`${AUTH_BASE}/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(signupData),
+      });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        setSignupError(errJson?.detail || "Signup failed. Please try again.");
+        return;
+      }
+      const json = await res.json();
+      // Auto-redirect to training.azense.app after signup
+      window.open("https://training.azense.app", "_blank");
+      setShowSignup(false);
+      setSignupData({ first_name: "", last_name: "", role: "student", institution: "", email: "", username: "", password: "" });
+      setSignupError("");
+      alert("Account created! You can now sign in to training.azense.app and ehr.azense.app with your new credentials.");
+    } catch (err) {
+      console.error(err);
+      setSignupError("Connection error. Please try again.");
+    } finally {
+      setSignupLoading(false);
     }
   };
 
@@ -642,6 +687,94 @@ function AppInner() {
               {loginLoading ? "Signing in…" : "Sign in"}
             </button>
           </form>
+
+          {/* ── Sign Up toggle ── */}
+          {!showSignup ? (
+            <button
+              onClick={() => { setShowSignup(true); setLoginError(""); }}
+              style={{
+                marginTop: 12,
+                width: "100%",
+                padding: "10px 16px",
+                borderRadius: 12,
+                border: "1px solid #CBD5E1",
+                background: "transparent",
+                color: "#475569",
+                fontWeight: 600,
+                fontSize: 13,
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+              }}
+            >
+              Create Free Trial Account
+            </button>
+          ) : (
+            <form
+              onSubmit={handleSignup}
+              style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16,
+                       padding: 16, borderRadius: 14, border: "1px solid #E2E8F0", background: "rgba(248,250,252,0.7)" }}
+            >
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#1E293B", marginBottom: 2 }}>
+                7-Day Free Trial
+              </div>
+              <div style={{ fontSize: 11, color: "#64748B", marginBottom: 4 }}>
+                Access to Patient 1, 2, and 3 on training.azense.app and ehr.azense.app.
+              </div>
+
+              <div style={{ display: "flex", gap: 8 }}>
+                <input placeholder="First name" required value={signupData.first_name}
+                  onChange={(e) => setSignupData({ ...signupData, first_name: e.target.value })}
+                  style={{ flex: 1, borderRadius: 10, border: "1px solid rgba(148,163,184,0.9)", padding: "7px 9px", fontSize: 13, backgroundColor: "#F9FAFB" }} />
+                <input placeholder="Last name" required value={signupData.last_name}
+                  onChange={(e) => setSignupData({ ...signupData, last_name: e.target.value })}
+                  style={{ flex: 1, borderRadius: 10, border: "1px solid rgba(148,163,184,0.9)", padding: "7px 9px", fontSize: 13, backgroundColor: "#F9FAFB" }} />
+              </div>
+
+              <select value={signupData.role}
+                onChange={(e) => setSignupData({ ...signupData, role: e.target.value })}
+                style={{ borderRadius: 10, border: "1px solid rgba(148,163,184,0.9)", padding: "7px 9px", fontSize: 13, backgroundColor: "#F9FAFB", cursor: "pointer" }}>
+                <option value="student">Student</option>
+                <option value="resident">Resident</option>
+                <option value="physician">Physician</option>
+              </select>
+
+              <input placeholder="Medical school or residency program" required value={signupData.institution}
+                onChange={(e) => setSignupData({ ...signupData, institution: e.target.value })}
+                style={{ borderRadius: 10, border: "1px solid rgba(148,163,184,0.9)", padding: "7px 9px", fontSize: 13, backgroundColor: "#F9FAFB" }} />
+              <input type="email" placeholder="Email" required value={signupData.email}
+                onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
+                style={{ borderRadius: 10, border: "1px solid rgba(148,163,184,0.9)", padding: "7px 9px", fontSize: 13, backgroundColor: "#F9FAFB" }} />
+              <input placeholder="Choose a username" required value={signupData.username}
+                onChange={(e) => setSignupData({ ...signupData, username: e.target.value })}
+                style={{ borderRadius: 10, border: "1px solid rgba(148,163,184,0.9)", padding: "7px 9px", fontSize: 13, backgroundColor: "#F9FAFB" }} />
+              <input type="password" placeholder="Choose a password (min 6 chars)" required
+                minLength={6} value={signupData.password}
+                onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+                style={{ borderRadius: 10, border: "1px solid rgba(148,163,184,0.9)", padding: "7px 9px", fontSize: 13, backgroundColor: "#F9FAFB" }} />
+
+              {signupError && (
+                <div style={{ fontSize: 12, color: "#B91C1C" }}>
+                  {signupError}
+                </div>
+              )}
+
+              <button type="submit" disabled={signupLoading}
+                style={{
+                  width: "100%", padding: "8px 12px", borderRadius: 999, border: "none",
+                  background: "linear-gradient(135deg, #0F766E 0%, #0D9488 50%, #0F766E 100%)",
+                  color: "#F0FDFA", fontWeight: 600, fontSize: 13,
+                  cursor: signupLoading ? "wait" : "pointer",
+                }}>
+                {signupLoading ? "Creating account\u2026" : "Start Free Trial"}
+              </button>
+
+              <button type="button" onClick={() => { setShowSignup(false); setSignupError(""); }}
+                style={{ background: "none", border: "none", color: "#94A3B8",
+                  fontSize: 12, cursor: "pointer", marginTop: 2 }}>
+                \u2190 Back to Sign In
+              </button>
+            </form>
+          )}
         </div>
       </div>
     );
